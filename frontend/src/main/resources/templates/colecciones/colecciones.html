@@ -1,0 +1,34 @@
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html}">
+
+<!-- Contenido principal -->
+<div th:fragment="contenido" class="main">
+    <h2 class="main-title">Colecciones de Datos</h2>
+    <p class="main-subtitle">Explora diversos conjuntos de datos.</p>
+    <div th:if="${error}" class="error-message">
+        <p th:text="${error}"></p>
+    </div>
+    <!-- Grid de colecciones -->
+    <section id="collections-grid" class="grid">
+        <div th:if="${colecciones}" th:each="coleccion : ${colecciones}" class="card">
+            <div class="card-header">
+                <span class="tag">Colección</span>
+            </div>
+            <div class="card-title" th:text="${coleccion.titulo}">Título</div>
+            <div class="card-desc" th:text="${coleccion.descripcion}">Descripción</div>
+            <div class="card-meta">
+                <span th:text="${coleccion.cantHechos} + ' hechos'">0 hechos</span>
+                <span th:text="'Algoritmo: ' + (${coleccion.algoritmo} ?: 'N/A')">Algoritmo: N/A</span>
+            </div>
+            <a th:href="@{/colecciones/{handle}(handle=${coleccion.handle})}" class="btn-secondary">Ver colección</a>
+        </div>
+        <!-- Mensaje si no hay colecciones -->
+        <div th:unless="${colecciones}" class="no-collections">
+            <p>No hay colecciones disponibles en este momento.</p>
+        </div>
+    </section>
+</div>
+
+<script th:src="@{/js/colecciones.js}"></script>
+</html>
+
+
