@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo} + ' - Metamapa'"></title>
+
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/botones.css}">
+
+    <!-- Meta tags para CSRF -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<!-- Fragmento de header -->
+<header th:replace="~{fragments/header :: header}"></header>
+
+<!-- Contenido principal -->
+<main>
+    <!-- Aca se inyecta el contenido específico -->
+    <div th:replace="~{:: contenido}"></div>
+</main>
+</body>
+</html>
