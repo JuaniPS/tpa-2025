@@ -1,0 +1,36 @@
+<html th:replace="~{layout/base :: html}">
+<div th:fragment="contenido" class="admin-section">
+    <div class="admin-container">
+        <h1 class="admin-title">Panel de Administración</h1>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h2 class="card-value" id="totalHechos">Cargando...</h2>
+                <p class="card-sub">+12% desde el mes pasado</p>
+                <span class="card-label">Total de Hechos</span>
+            </div>
+
+            <div class="dashboard-card alert">
+                <h2 class="card-value" id="pendientesRevision">Cargando...</h2>
+                <p class="card-sub">Requieren atención inmediata</p>
+                <span class="card-label">Pendientes de Revisión</span>
+            </div>
+
+            <div class="dashboard-card">
+                <h2 class="card-value" id="usuariosActivos">Cargando...</h2>
+                <p class="card-sub">+5% desde el mes pasado</p>
+                <span class="card-label">Usuarios Activos</span>
+            </div>
+
+            <div class="dashboard-card alert">
+                <h2 class="card-value" id="solicitudesSpam">Cargando...</h2>
+                <p class="card-sub">Detectadas como spam</p>
+                <span class="card-label">Solicitudes de Eliminación</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;">
+            <button class="btn btn-primary" id="btnActualizar">Actualizar estadísticas</button>
+        </div>
+    </div>
+</div>
