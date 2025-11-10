@@ -68,6 +68,7 @@ public class AdminController {
   // --- DASHBOARD ---
 
   @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarDashboard(Model model) {
     model.addAttribute("titulo", "Panel de administración");
 
@@ -83,17 +84,20 @@ public class AdminController {
     model.addAttribute("totalColecciones", colecciones.size());
     model.addAttribute("solicitudes", solicitudes);
     model.addAttribute("totalSolicitudes", solicitudes.size());
+    model.addAttribute("adminPanel", true);
 
     return "admin/dashboard"; // Template: src/main/resources/templates/admin/dashboard.html
   }
 
   @GetMapping("/panel")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarPanelCompleto(Model model) {
     model.addAttribute("titulo", "Panel de Administración");
     return "admin/panel"; // Template: src/main/resources/templates/admin/panel.html
   }
 
   @GetMapping("/colecciones")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarColecciones(Model model) {
     model.addAttribute("colecciones", coleccionService.getAllColecciones());
     model.addAttribute("coleccion", new ColeccionDTO());
@@ -102,13 +106,16 @@ public class AdminController {
   }
 
   @GetMapping("/colecciones/crear")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarFormularioCrear(Model model) {
     model.addAttribute("coleccion", new ColeccionDTO());
     model.addAttribute("titulo", "Crear nueva colección");
+    model.addAttribute("adminPanel", true);
     return "admin/colecciones/crear";
   }
 
   @PostMapping("/colecciones/crear")
+  @PreAuthorize("hasRole('ADMIN')")
   public String crearColeccion(@ModelAttribute("coleccion") ColeccionDTO coleccionDTO,
                                BindingResult bindingResult,
                                Model model,
@@ -124,6 +131,7 @@ public class AdminController {
   }
 
   @GetMapping("/colecciones/{handle}/editar")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarFormularioEditar(
       @PathVariable String handle,
       Model model) {
@@ -132,6 +140,7 @@ public class AdminController {
 
       model.addAttribute("coleccion", coleccionDTO);
       model.addAttribute("titulo", "Editar colección");
+      model.addAttribute("adminPanel", true);
       return "admin/colecciones/editar";
     } catch (NotFoundException e) {
       return "redirect:/404";
@@ -139,6 +148,7 @@ public class AdminController {
   }
 
   @PostMapping("/colecciones/{handle}/actualizar")
+  @PreAuthorize("hasRole('ADMIN')")
   public String actualizarColeccion(@PathVariable String handle,
                                     @ModelAttribute("coleccion") ColeccionDTO coleccionDTO,
                                     BindingResult bindingResult,
@@ -146,93 +156,152 @@ public class AdminController {
                                     RedirectAttributes redirectAttributes) {
     try {
       ColeccionDTO coleccionActualizada = coleccionService.actualizarColeccion(handle, coleccionDTO);
-
+      redirectAttributes.addFlashAttribute("toastMessage", "Colección actualizada con éxito ✅");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
     } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Colección no encontrada ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/404";
     } catch (Exception e) {
       log.error("Error al editar colección {}", handle, e);
       model.addAttribute("titulo", "Editar colección");
+      model.addAttribute("toastMessage", "Ocurrió un error al actualizar la colección ⚠️");
+      model.addAttribute("toastType", "error");
       return "admin/colecciones/editar";
     }
   }
 
   @PostMapping("/colecciones/{handle}/eliminar")
-  public String eliminarColeccion(@PathVariable String handle) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public String eliminarColeccion(@PathVariable String handle ,RedirectAttributes redirectAttributes) {
     try {
       coleccionService.eliminarColeccion(handle);
+      redirectAttributes.addFlashAttribute("toastMessage", "Coleccion eliminada con éxito ✅");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
     } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Colección no encontrada ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/404";
     } catch (Exception e) {
       log.error("Error al eliminar colección {}", handle, e);
+      redirectAttributes.addFlashAttribute("toastMessage", "Ocurrió un error al eliminar la colección ⚠️");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/admin";
     }
   }
 
   @GetMapping("/hechos")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarHechos(Model model) {
     List<HechoDTO> hechosPendientes = hechosService.obtenerHechosPendientes();
     model.addAttribute("hechosPendientes", hechosPendientes);
     model.addAttribute("titulo", "Hechos pendientes");
+    model.addAttribute("adminPanel", true);
     return "admin/moderacion";
   }
   // TODO: POST importar archivo CSV
 
   @PostMapping("/hechos/{id}/aprobar")
-  public String aprobarHecho(@PathVariable Long id, Model model, @ModelAttribute("hechoActualizado") HechoDTO hechoActualizado) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public String aprobarHecho(@PathVariable Long id,
+                             Model model,
+                             @ModelAttribute("hechoActualizado") HechoDTO hechoActualizado,
+                             RedirectAttributes redirectAttributes) {
     try {
       hechosService.aprobarHecho(id, hechoActualizado);
+      redirectAttributes.addFlashAttribute("toastMessage", "Hecho aprobado con éxito ✅");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
+    } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Hecho no encontrado ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
+      return "redirect:/404";
     } catch (Exception e) {
-      log.error("Error al aprobar hecho", e);
-      model.addAttribute("titulo", "Hechos pendientes");
+      log.error("Error al aprobar hecho {}", id, e);
+      redirectAttributes.addFlashAttribute("toastMessage", "Ocurrió un error al aprobar el hecho ⚠️");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/admin";
     }
   }
 
   @PostMapping("/hechos/{id}/rechazar")
-  public String rechazarHecho(@PathVariable Long id, Model model) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public String rechazarHecho(@PathVariable Long id,
+                              Model model,
+                              RedirectAttributes redirectAttributes) {
     try {
       hechosService.rechazarHecho(id);
+      redirectAttributes.addFlashAttribute("toastMessage", "Hecho rechazado con éxito 🚫");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
+    } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Hecho no encontrado ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
+      return "redirect:/404";
     } catch (Exception e) {
-      log.error("Error al rechazar hecho", e);
-      model.addAttribute("titulo", "Hechos pendientes");
+      log.error("Error al rechazar hecho {}", id, e);
+      redirectAttributes.addFlashAttribute("toastMessage", "Ocurrió un error al rechazar el hecho ⚠️");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/admin";
     }
   }
 
+
   @GetMapping("/solicitudes")
+  @PreAuthorize("hasRole('ADMIN')")
   public String mostrarSolicitudes(Model model) {
     List<SolicitudEliminacionDTO> solicitudes = solicitudesService.obtenerSolicitudes();
     model.addAttribute("titulo", "Solicitudes de eliminación");
     model.addAttribute("listaSolicitudes", solicitudes);
+    model.addAttribute("adminPanel", true);
     return "admin/solicitudes";
   }
 
   @PostMapping("/solicitudes/{id}/aceptar")
-  public String aceptarSolicitud(@PathVariable Long id, Model model) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public String aceptarSolicitud(@PathVariable Long id,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
     try {
       solicitudesService.aceptarSolicitud(id);
+      redirectAttributes.addFlashAttribute("toastMessage", "Solicitud aceptada con éxito ✅");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
+    } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Solicitud no encontrada ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
+      return "redirect:/404";
     } catch (Exception e) {
-      log.error("Error al aceptar solicitud", e);
-      model.addAttribute("titulo", "Solicitudes de eliminación");
+      log.error("Error al aceptar solicitud {}", id, e);
+      redirectAttributes.addFlashAttribute("toastMessage", "Ocurrió un error al aceptar la solicitud ⚠️");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/admin";
     }
   }
 
   @PostMapping("/solicitudes/{id}/rechazar")
-  public String rechazarSolicitud(@PathVariable Long id, Model model) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public String rechazarSolicitud(@PathVariable Long id,
+                                  Model model,
+                                  RedirectAttributes redirectAttributes) {
     try {
       solicitudesService.rechazarSolicitud(id);
+      redirectAttributes.addFlashAttribute("toastMessage", "Solicitud rechazada con éxito 🚫");
+      redirectAttributes.addFlashAttribute("toastType", "success");
       return "redirect:/admin";
+    } catch (NotFoundException e) {
+      redirectAttributes.addFlashAttribute("toastMessage", "Solicitud no encontrada ❌");
+      redirectAttributes.addFlashAttribute("toastType", "error");
+      return "redirect:/404";
     } catch (Exception e) {
-      log.error("Error al rechazar solicitud", e);
-      model.addAttribute("titulo", "Solicitudes de eliminación");
+      log.error("Error al rechazar solicitud {}", id, e);
+      redirectAttributes.addFlashAttribute("toastMessage", "Ocurrió un error al rechazar la solicitud ⚠️");
+      redirectAttributes.addFlashAttribute("toastType", "error");
       return "redirect:/admin";
     }
   }
+
 
 }

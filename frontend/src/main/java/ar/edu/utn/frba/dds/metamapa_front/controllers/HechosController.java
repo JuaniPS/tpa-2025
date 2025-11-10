@@ -1,5 +1,7 @@
 package ar.edu.utn.frba.dds.metamapa_front.controllers;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import ar.edu.utn.frba.dds.metamapa_front.dtos.HechoDTO;
@@ -37,6 +39,7 @@ public class HechosController {
   private String backendUrl;
 
   @GetMapping("/me")
+  @PreAuthorize("hasAnyRole('USER','ADMIN')")
   public String verHechosDeUsuario(Model model) {
     try {
       List<HechoDTO> hecho = hechosService.getMisHechos();
@@ -64,12 +67,15 @@ public class HechosController {
 
       Long currentUserId = null;
       boolean isAdmin = false;
+      boolean puedeEditar = hecho.getFechaCarga() != null &&
+              ChronoUnit.DAYS.between(hecho.getFechaCarga(), LocalDateTime.now()) <= 7;
 
       model.addAttribute("hecho", hecho);
       model.addAttribute("titulo", "Detalle del hecho");
       model.addAttribute("backendUrl", backendUrl);
       model.addAttribute("currentUserId", currentUserId);
       model.addAttribute("isAdmin", isAdmin);
+      model.addAttribute("puedeEditar", puedeEditar);
       model.addAttribute("solicitudEliminacion", new SolicitudEliminacionDTO());
 
       return "hechos/detalle";
@@ -134,7 +140,7 @@ public class HechosController {
 */
 
   @GetMapping("/{id}/editar")
-  @PreAuthorize("hasRole('USER')")
+  @PreAuthorize("hasAnyRole('USER','ADMIN')")
   public String mostrarFormularioEditar(@PathVariable Long id, Model model) {
     try {
       log.info("Intentando editar hecho con id: {}", id);
@@ -173,7 +179,7 @@ public class HechosController {
 
    */
   @PostMapping("/{id}/actualizar")
-  //@PreAuthorize("hasAuthority('EDITAR_HECHOS')")
+  @PreAuthorize("hasAnyRole('USER','ADMIN')")
   public String actualizarHecho(
           @PathVariable Long id,
           @ModelAttribute("hecho") HechoDTO hechoDTO,
@@ -183,6 +189,18 @@ public class HechosController {
           Model model) {
 
     try {
+
+      HechoDTO hechoOriginal = hechosService.getHechoById(id)
+              .orElseThrow(() -> new NotFoundException("Hecho no encontrado"));
+
+      // Verificación del plazo de 7 días
+      if (hechoOriginal.getFechaCarga() != null &&
+              ChronoUnit.DAYS.between(hechoOriginal.getFechaCarga(), LocalDateTime.now()) > 7) {
+        redirectAttributes.addFlashAttribute("toastMessage", "Este hecho ya no se puede editar ❌");
+        redirectAttributes.addFlashAttribute("toastType", "error");
+        return "redirect:/hechos/" + id;
+      }
+
       hechosService.actualizarHecho(id, hechoDTO);
 
       redirectAttributes.addFlashAttribute("toastMessage", "Hecho actualizado correctamente ✅");
