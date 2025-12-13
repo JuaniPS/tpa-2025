@@ -5,18 +5,11 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import ar.edu.utn.frba.dds.metamapa_front.dtos.AuthResponseDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.ColeccionDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.DatosGeograficosDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.HechoDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.HechoFiltroDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.LoginRequest;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.RegistroRequest;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.Rol;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.RolesPermisosDTO;
-import ar.edu.utn.frba.dds.metamapa_front.dtos.SolicitudEliminacionDTO;
+import ar.edu.utn.frba.dds.metamapa_front.dtos.*;
 import ar.edu.utn.frba.dds.metamapa_front.exceptions.NotFoundException;
+import ar.edu.utn.frba.dds.metamapa_front.services.internal.GraphQlCallerService;
 import ar.edu.utn.frba.dds.metamapa_front.services.internal.WebApiCallerService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,14 +35,14 @@ public class MetamapaApiService {
   private static final Logger log = LoggerFactory.getLogger(MetamapaApiService.class);
   private final WebClient webClient;
   private final WebApiCallerService webApiCallerService;
-  private final String authServiceUrl;
+  private final GraphQlCallerService graphQlCallerService;
   private final String metamapaServiceUrl;
 
   @Autowired
-  public MetamapaApiService(WebApiCallerService webApiCallerService, @Value("${auth.service.url}") String authServiceUrl, @Value("${colecciones.service.url}") String metamapaServiceUrl) {
+  public MetamapaApiService(WebApiCallerService webApiCallerService, GraphQlCallerService graphQlCallerService, @Value("${colecciones.service.url}") String metamapaServiceUrl) {
     this.webClient = WebClient.builder().build();
     this.webApiCallerService = webApiCallerService;
-    this.authServiceUrl = authServiceUrl;
+    this.graphQlCallerService = graphQlCallerService;
     this.metamapaServiceUrl = metamapaServiceUrl;
   }
 
@@ -77,6 +70,9 @@ public class MetamapaApiService {
       log.error(e.getMessage());
       if (e.getStatusCode() == HttpStatus.UNAUTHORIZED || e.getStatusCode() == HttpStatus.NOT_FOUND) {
         return null;
+      }
+      if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+        throw new RuntimeException("RATE_LIMIT_EXCEEDED");
       }
       throw new RuntimeException("Error en el servicio de autenticación: " + e.getMessage(), e);
     } catch (Exception e) {
@@ -110,7 +106,15 @@ public class MetamapaApiService {
   }
 
   public List<ColeccionDTO> getAllColecciones() {
-    List<ColeccionDTO> response = webApiCallerService.getListPublic(metamapaServiceUrl + "/colecciones", ColeccionDTO.class);
+    return retrieveColecciones("/colecciones");
+  }
+
+  public List<ColeccionDTO> getAllColecciones(Integer limit) {
+    return retrieveColecciones("/colecciones?limit=" + limit);
+  }
+
+  private List<ColeccionDTO> retrieveColecciones(String endpoint) {
+    List<ColeccionDTO> response = webApiCallerService.getListPublic(metamapaServiceUrl + endpoint, ColeccionDTO.class);
     return response != null ? response : List.of();
   }
 
@@ -144,12 +148,21 @@ public class MetamapaApiService {
   }
 
   public ColeccionDTO actualizarColeccion(String handle, ColeccionDTO coleccionDTO) {
-    ColeccionDTO response = webApiCallerService.patch(metamapaServiceUrl + "/colecciones/" + handle, coleccionDTO, ColeccionDTO.class);
+    ColeccionDTO response = webApiCallerService.patch(
+            metamapaServiceUrl + "/colecciones/" + handle,
+            coleccionDTO,
+            ColeccionDTO.class
+    );
+
     if (response == null) {
       throw new RuntimeException("Error al actualizar coleccion en el servicio externo");
     }
+
+    reemplazarFuentesColeccion(handle, coleccionDTO.getFuentesIds());
+
     return response;
   }
+
 
   public void eliminarColeccion(String handle) {
     webApiCallerService.delete(metamapaServiceUrl + "/colecciones/" + handle);
@@ -158,8 +171,8 @@ public class MetamapaApiService {
   public HechoDTO getHechoById(Long id) {
 
     String url = metamapaServiceUrl.endsWith("/")
-            ? metamapaServiceUrl + "hechos/" + id
-            : metamapaServiceUrl + "/hechos/" + id;
+        ? metamapaServiceUrl + "hechos/" + id
+        : metamapaServiceUrl + "/hechos/" + id;
 
     log.info("Llamando al backend: {}", url);
 
@@ -284,8 +297,8 @@ public class MetamapaApiService {
     return response != null ? response : List.of();
   }
 
-  public List<HechoDTO> getAllHechos() {
-    return webApiCallerService.getListPublic(metamapaServiceUrl + "/hechos", HechoDTO.class);
+  public List<HechoDTO> getAllHechos(Integer limit) {
+    return webApiCallerService.getListPublic(metamapaServiceUrl + "/hechos?size=" + limit.toString(), HechoDTO.class);
   }
 
 
@@ -295,20 +308,43 @@ public class MetamapaApiService {
   }
 
   public List<SolicitudEliminacionDTO> obtenerSolicitudes() {
-    List<SolicitudEliminacionDTO> response = webApiCallerService.getList(metamapaServiceUrl + "/solicitudes", SolicitudEliminacionDTO.class);
-    return response != null ? response : List.of();
+    String query = "{ getSolicitudes { id razon idHecho estado fecha } }";
+    return graphQlCallerService.executeQueryForList(query, SolicitudEliminacionDTO.class);
   }
 
+
   public void crearSolicitudEliminacion(SolicitudEliminacionDTO solicitudDTO) {
-    webApiCallerService.postPublic(metamapaServiceUrl + "/solicitudes", solicitudDTO, SolicitudEliminacionDTO.class);
+    String razonEscapada = solicitudDTO.getRazon()
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n");
+
+    String query = String.format(
+        "mutation { crearSolicitud(solicitud: { idHecho: %s, razon: \"\"\"%s\"\"\" }) { id razon idHecho estado } }",
+        solicitudDTO.getIdHecho().toString(),
+        razonEscapada
+    );
+
+    graphQlCallerService.executePublicQuery(query, SolicitudEliminacionDTO.class);
   }
 
   public void aceptarSolicitudEliminacion(Long id) {
-    webApiCallerService.patch(metamapaServiceUrl + "/solicitudes/" + id.toString() + "/aceptar", new java.util.HashMap<>(), Void.class);
+    String query = "mutation { aceptarSolicitud(solicitud: { id: \"" + id.toString() + "\" }) { id razon idHecho estado } }";
+    graphQlCallerService.executeQuery(query, SolicitudEliminacionDTO.class);
   }
 
+
   public void rechazarSolicitudEliminacion(Long id) {
-    webApiCallerService.patch(metamapaServiceUrl + "/solicitudes/" + id.toString() + "/rechazar", new java.util.HashMap<>(), Void.class);
+    String query = "mutation { rechazarSolicitud(solicitud: { id: \"" + id.toString() + "\" }) { id razon idHecho estado } }";
+    graphQlCallerService.executeQuery(query, SolicitudEliminacionDTO.class);
+  }
+
+  public void reemplazarFuentesColeccion(String handleColeccion, List<Long> idsFuentesDeseadas) {
+    String fuentesArray = idsFuentesDeseadas.stream()
+        .map(id -> "{ id: " + id + " }")
+        .collect(Collectors.joining(", "));
+    String query = "mutation { reemplazarFuentesColeccion(coleccion: { handle: \"" + handleColeccion + "\" }, fuentes: [" + fuentesArray + "] ) { id fuentes { id } } }";
+    graphQlCallerService.executeQuery(query, ColeccionDTO.class);
   }
 
   public void crearUsuario(RegistroRequest registroRequest) {
@@ -405,4 +441,12 @@ public class MetamapaApiService {
   public void postPublicJson(String path, Object body) {
     webApiCallerService.postPublic(metamapaServiceUrl + path, body, Void.class);
   }
+
+
+  public List<FuenteOutputDTO> getTodasLasFuentes() {
+    List<FuenteOutputDTO> response = webApiCallerService.getList(metamapaServiceUrl + "/fuentes", FuenteOutputDTO.class);
+    return response != null ? response : List.of();
+  }
+
+
 }

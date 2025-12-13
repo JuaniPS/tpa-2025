@@ -9,6 +9,7 @@ C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\u
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\AuthResponseDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\ColeccionDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\DatosGeograficosDTO.java
+C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\FuenteOutputDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\HechoDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\HechoFiltroDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\LoginRequest.java
@@ -19,12 +20,15 @@ C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\u
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\RolesPermisosDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\dtos\SolicitudEliminacionDTO.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\exceptions\NotFoundException.java
+C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\exceptions\RateLimitExceededException.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\exceptions\ValidationException.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\MetamapaFrontApplication.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\providers\CustomAuthProvider.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\ColeccionService.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\EstadisticasService.java
+C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\FuenteService.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\HechosService.java
+C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\internal\GraphQlCallerService.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\internal\WebApiCallerService.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\MetamapaApiService.java
 C:\Users\jiper\Proyectos\2025-tpa-ma-ma-grupo-26\frontend\src\main\java\ar\edu\utn\frba\dds\metamapa_front\services\SolicitudesService.java

@@ -1,5 +1,8 @@
 package ar.edu.utn.frba.dds.metamapa_front.controllers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ar.edu.utn.frba.dds.metamapa_front.dtos.ColeccionDTO;
 import ar.edu.utn.frba.dds.metamapa_front.dtos.HechoDTO;
 import ar.edu.utn.frba.dds.metamapa_front.services.ColeccionService;
@@ -19,6 +22,18 @@ public class LandingController {
   @GetMapping("/")
   public String landing(Model model) {
     model.addAttribute("titulo", "Información Colaborativa para el Bien Social");
+
+    List<HechoDTO> hechosDestacados = new ArrayList<>();
+    List<ColeccionDTO> coleccionesDestacadas = new ArrayList<>();
+    try {
+      hechosDestacados = hechosService.getDestacados();
+      coleccionesDestacadas = coleccionService.getDestacadas();
+    } catch (Exception ignored) {
+    }
+
+    model.addAttribute("hechosDestacados", hechosDestacados);
+    model.addAttribute("coleccionesDestacadas", coleccionesDestacadas);
+
     return "landing/landing";
   }
 

@@ -1,18 +1,22 @@
 package ar.edu.utn.frba.dds.metamapa.models.entities.hechos;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import ar.edu.utn.frba.dds.metamapa.converters.EstrategiaConsensoAttributeConverter;
 import ar.edu.utn.frba.dds.metamapa.models.entities.Persistente;
 import ar.edu.utn.frba.dds.metamapa.models.entities.consenso.ConsensoTrue;
 import ar.edu.utn.frba.dds.metamapa.models.entities.consenso.EstrategiaConsenso;
-import ar.edu.utn.frba.dds.metamapa.models.entities.enums.Estado;
 import ar.edu.utn.frba.dds.metamapa.models.entities.filtros.Filtro;
 import ar.edu.utn.frba.dds.metamapa.models.entities.fuentes.Fuente;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -38,7 +42,7 @@ public class Coleccion extends Persistente {
   @Column(name = "descripcion", columnDefinition = "TEXT")
   private String descripcion;
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "coleccion_fuente",
       joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
@@ -46,7 +50,7 @@ public class Coleccion extends Persistente {
   )
   private List<Fuente> fuentes = new ArrayList<>();
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "coleccion_criterio",
       joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
@@ -54,7 +58,7 @@ public class Coleccion extends Persistente {
   )
   private List<Filtro> criterios = new ArrayList<>();
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @JoinTable(
       name = "coleccion_hecho",
       joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
@@ -85,20 +89,26 @@ public class Coleccion extends Persistente {
     this.fuentes.remove(fuente);
   }
 
+
   public void agregarCriterio(Filtro criterio) {
     this.criterios.add(criterio);
   }
 
+
   public void actualizarColeccion() {
-    List<Hecho> hechosFiltrados = new ArrayList<>();
-    for (Fuente fuente : fuentes) {
-      List<Hecho> hechosFuente = fuente.getHechos();
-      hechosFiltrados.addAll(hechosFuente.stream().filter(
-              h -> this.criterios.isEmpty() || this.criterios.stream().allMatch(c -> c.cumple(h))
-              )
-              .toList());
+    boolean sinCriterios = this.criterios.isEmpty();
+
+    Set<Hecho> nuevosHechos = fuentes.stream()
+        .flatMap(fuente -> fuente.getHechos().stream())
+        .filter(h -> sinCriterios || this.criterios.stream().allMatch(c -> c.cumple(h)))
+        .collect(Collectors.toSet());
+
+    Set<Hecho> actuales = new HashSet<>(this.hechos);
+
+    if (!actuales.equals(nuevosHechos)) {
+      this.hechos.clear();
+      this.hechos.addAll(nuevosHechos);
     }
-    this.hechos = hechosFiltrados;
   }
 
   public List<Hecho> navegar(List<Filtro> criterios, Boolean curado) {
@@ -109,8 +119,16 @@ public class Coleccion extends Persistente {
   }
 
   public void actualizarCurados() {
-    this.hechosConsensuados = this.hechos.stream()
-        .filter(h -> this.algoritmoDeConsenso.cumple(h, this.fuentes))
-        .toList();
+      this.hechosConsensuados = this.algoritmoDeConsenso.filtrarConsensuados(this.hechos, this.fuentes);
+//    Set<Hecho> nuevosConsensuados = this.hechos.stream()
+//        .filter(h -> this.algoritmoDeConsenso.cumple(h, this.fuentes))
+//        .collect(Collectors.toSet());
+//
+//    Set<Hecho> actuales = new HashSet<>(this.hechosConsensuados);
+//
+//    if (!actuales.equals(nuevosConsensuados)) {
+//      this.hechosConsensuados.clear();
+//      this.hechosConsensuados.addAll(nuevosConsensuados);
+//    }
   }
 }

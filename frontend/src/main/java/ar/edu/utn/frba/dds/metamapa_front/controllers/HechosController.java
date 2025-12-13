@@ -8,7 +8,6 @@ import ar.edu.utn.frba.dds.metamapa_front.dtos.HechoDTO;
 import ar.edu.utn.frba.dds.metamapa_front.dtos.SolicitudEliminacionDTO;
 import ar.edu.utn.frba.dds.metamapa_front.exceptions.NotFoundException;
 import ar.edu.utn.frba.dds.metamapa_front.services.HechosService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,11 +99,10 @@ public class HechosController {
       RedirectAttributes redirectAttributes) {
 
     try {
-      hechosService.crearHecho(hechoDTO, archivos);
+      HechoDTO hechoCreado = hechosService.crearHecho(hechoDTO, archivos);
 
-      redirectAttributes.addFlashAttribute("toastMessage", "Hecho creado con éxito ✅");
-      redirectAttributes.addFlashAttribute("toastType", "success");
-      return "redirect:/colecciones";
+      redirectAttributes.addFlashAttribute("hechoCreado", hechoCreado);
+      return "redirect:/hechos/exito";
     } catch (IllegalArgumentException ex) {
       if ("FECHA_FUTURA".equals(ex.getMessage())) {
         redirectAttributes.addFlashAttribute("toastMessage",
@@ -121,23 +119,24 @@ public class HechosController {
 
 
   }
-/*
-  @GetMapping("/{id}/editar")
-  @PreAuthorize("hasAuthority('EDITAR_HECHOS')")
-  public String mostrarFormularioEditar(
-      @PathVariable Long id,
-      Model model) {
-    try {
-      HechoDTO hechoDTO = hechosService.getHechoById(id).get();
 
-      model.addAttribute("coleccion", hechoDTO);
-      model.addAttribute("titulo", "Editar hecho");
-      return "hechos/editar";
-    } catch (NotFoundException e) {
-      return "redirect:/404";
+  @GetMapping("/exito")
+  public String mostrarExito(Model model, RedirectAttributes redirectAttributes) {
+    if (!model.containsAttribute("hechoCreado")) {
+      redirectAttributes.addFlashAttribute("toastMessage", "No hay hecho para mostrar");
+      redirectAttributes.addFlashAttribute("toastType", "error");
+      return "redirect:/";
     }
+
+    HechoDTO hechoCreado = (HechoDTO) model.getAttribute("hechoCreado");
+
+    model.addAttribute("hecho", hechoCreado);
+    model.addAttribute("titulo", "Hecho creado con éxito");
+    model.addAttribute("backendUrl", backendUrl);
+
+    return "hechos/exito";
   }
-*/
+
 
   @GetMapping("/{id}/editar")
   @PreAuthorize("hasAnyRole('USER','ADMIN')")
@@ -156,28 +155,6 @@ public class HechosController {
     }
   }
 
-  /*
-  @PostMapping("/{id}/actualizar")
-  @PreAuthorize("hasAuthority('EDITAR_HECHOS')")
-  public String actualizarColeccion(@PathVariable Long id,
-                                    @ModelAttribute("hecho") HechoDTO hechoDTO,
-                                    BindingResult bindingResult,
-                                    Model model,
-                                    RedirectAttributes redirectAttributes) {
-    try {
-      HechoDTO hechoActualizado = hechosService.actualizarHecho(id, hechoDTO);
-
-      return "redirect:/colecciones/colecciones";
-    } catch (NotFoundException e) {
-      return "redirect:/404";
-    } catch (Exception e) {
-      log.error("Error al editar hecho {}", hechoDTO.getTitulo(), e);
-      model.addAttribute("titulo", "Editar hecho");
-      return "hechos/editar";
-    }
-  }
-
-   */
   @PostMapping("/{id}/actualizar")
   @PreAuthorize("hasAnyRole('USER','ADMIN')")
   public String actualizarHecho(
