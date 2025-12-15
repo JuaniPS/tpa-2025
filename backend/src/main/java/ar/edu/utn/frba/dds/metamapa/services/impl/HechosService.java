@@ -1,5 +1,4 @@
 package ar.edu.utn.frba.dds.metamapa.services.impl;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import ar.edu.utn.frba.dds.metamapa.models.entities.hechos.Ubicacion;
 import ar.edu.utn.frba.dds.metamapa.models.repositories.IFuentesRepository;
 import ar.edu.utn.frba.dds.metamapa.models.repositories.IHechosRepository;
 import ar.edu.utn.frba.dds.metamapa.models.repositories.IUsuarioRepository;
+import ar.edu.utn.frba.dds.metamapa.models.repositories.ISolicitudesEliminacionRepository;
 import ar.edu.utn.frba.dds.metamapa.services.IHechosService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +35,9 @@ public class HechosService implements IHechosService {
 
   @Autowired
   private IUsuarioRepository usuarioRepository;
+
+  @Autowired
+  private ISolicitudesEliminacionRepository solicitudEliminacionRepository;
 
   private FuenteDinamica getFuenteDinamica() {
     // Buscamos la fuente dinámica
@@ -145,6 +148,9 @@ public class HechosService implements IHechosService {
   @Override
   public void marcarEliminado(Long id) {
     Hecho hecho = intentarRecuperarHecho(id);
+
+    solicitudEliminacionRepository.deleteAllByHechoId(id);
+
     hecho.eliminar();
     hechosRepository.save(hecho);
   }
