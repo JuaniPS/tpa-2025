@@ -11,7 +11,4 @@ public interface ISolicitudesEliminacionRepository extends JpaRepository<Solicit
 
   @Query("SELECT s FROM SolicitudEliminacion s WHERE s.esSpam = FALSE AND LOWER(s.estado) = 'pendiente' ")
   List<SolicitudEliminacion> findAllPendientes();
-
-  void deleteAllByHechoId(Long hechoId);
-
 }
