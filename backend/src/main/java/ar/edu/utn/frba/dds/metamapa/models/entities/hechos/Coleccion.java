@@ -20,12 +20,12 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 
 @Getter
 @Setter
@@ -43,27 +43,14 @@ public class Coleccion extends Persistente {
   private String descripcion;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "coleccion_fuente",
-      joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
-      inverseJoinColumns = @JoinColumn(name = "fuente_id", referencedColumnName = "id")
-  )
+  @JoinTable(name = "coleccion_fuente", joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fuente_id", referencedColumnName = "id"))
   private List<Fuente> fuentes = new ArrayList<>();
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "coleccion_criterio",
-      joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
-      inverseJoinColumns = @JoinColumn(name = "criterio_id", referencedColumnName = "id")
-  )
+  @OneToMany(mappedBy = "coleccion", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Filtro> criterios = new ArrayList<>();
 
-  @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-  @JoinTable(
-      name = "coleccion_hecho",
-      joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"),
-      inverseJoinColumns = @JoinColumn(name = "hecho_id", referencedColumnName = "id")
-  )
+  @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+  @JoinTable(name = "coleccion_hecho", joinColumns = @JoinColumn(name = "coleccion_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "hecho_id", referencedColumnName = "id"))
   private List<Hecho> hechos = new ArrayList<>();
 
   @Transient
@@ -89,11 +76,9 @@ public class Coleccion extends Persistente {
     this.fuentes.remove(fuente);
   }
 
-
   public void agregarCriterio(Filtro criterio) {
     this.criterios.add(criterio);
   }
-
 
   public void actualizarColeccion() {
     boolean sinCriterios = this.criterios.isEmpty();
@@ -119,16 +104,16 @@ public class Coleccion extends Persistente {
   }
 
   public void actualizarCurados() {
-      this.hechosConsensuados = this.algoritmoDeConsenso.filtrarConsensuados(this.hechos, this.fuentes);
-//    Set<Hecho> nuevosConsensuados = this.hechos.stream()
-//        .filter(h -> this.algoritmoDeConsenso.cumple(h, this.fuentes))
-//        .collect(Collectors.toSet());
-//
-//    Set<Hecho> actuales = new HashSet<>(this.hechosConsensuados);
-//
-//    if (!actuales.equals(nuevosConsensuados)) {
-//      this.hechosConsensuados.clear();
-//      this.hechosConsensuados.addAll(nuevosConsensuados);
-//    }
+    this.hechosConsensuados = this.algoritmoDeConsenso.filtrarConsensuados(this.hechos, this.fuentes);
+    // Set<Hecho> nuevosConsensuados = this.hechos.stream()
+    // .filter(h -> this.algoritmoDeConsenso.cumple(h, this.fuentes))
+    // .collect(Collectors.toSet());
+    //
+    // Set<Hecho> actuales = new HashSet<>(this.hechosConsensuados);
+    //
+    // if (!actuales.equals(nuevosConsensuados)) {
+    // this.hechosConsensuados.clear();
+    // this.hechosConsensuados.addAll(nuevosConsensuados);
+    // }
   }
 }
